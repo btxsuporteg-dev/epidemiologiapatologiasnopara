@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesquisa: Manejo de Patologias e Lesões Mais Comuns no Pará</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --primary: #0f766e;
+    --primary-dark: #115e59;
+    --primary-light: #ccfbf1;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+  }
+  header {
+    background: linear-gradient(135deg, var(--primary-dark), #0d9488);
+    color: #fff; padding: 2rem 1.5rem; text-align: center;
+  }
+  header h1 { font-size: 1.45rem; max-width: 900px; margin: 0 auto .4rem; }
+  header p { opacity: .9; font-size: .95rem; max-width: 800px; margin: 0 auto; }
+  .contador-badge {
+    display: inline-block; margin-top: .9rem; background: rgba(255,255,255,.18);
+    padding: .35rem .9rem; border-radius: 999px; font-size: .85rem; font-weight: 600;
+  }
+  .tabs {
+    display: flex; gap: .5rem; max-width: 1150px; margin: 1.25rem auto 0;
+    padding: 0 1rem; flex-wrap: wrap;
+  }
+  .tab-btn {
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    padding: .6rem 1.2rem; border-radius: 10px 10px 0 0; cursor: pointer;
+    font-size: .95rem; font-weight: 600; border-bottom: none;
+  }
+  .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  main { max-width: 1150px; margin: 0 auto 3rem; padding: 0 1rem; }
+  .tab-section { display: none; animation: fade .25s ease; }
+  .tab-section.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none;} }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 1.5rem; margin-top: 1rem;
+  }
+  fieldset { border: none; margin-bottom: 1.75rem; }
+  fieldset:last-of-type { margin-bottom: .5rem; }
+  legend {
+    font-weight: 700; font-size: 1.05rem; color: var(--primary-dark);
+    padding-bottom: .5rem; border-bottom: 2px solid var(--primary-light);
+    width: 100%; margin-bottom: 1rem;
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+  .campo { display: flex; flex-direction: column; gap: .3rem; }
+  .campo label { font-size: .88rem; font-weight: 600; color: var(--muted); }
+  .campo input[type="text"], .campo input[type="number"], .campo select, .campo textarea {
+    padding: .6rem .75rem; border: 1px solid var(--border); border-radius: 8px;
+    font-size: .95rem; font-family: inherit; background: #fff; color: var(--text);
+    transition: border-color .15s;
+  }
+  .campo input:focus, .campo select:focus, .campo textarea:focus {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  /* ---- Likert ---- */
+  .likert { margin-bottom: 1.4rem; }
+  .likert-label { font-size: .93rem; font-weight: 600; margin-bottom: .5rem; }
+  .likert-options { display: flex; gap: .5rem; }
+  .likert-options label { flex: 1; cursor: pointer; position: relative; }
+  .likert-options input { position: absolute; opacity: 0; pointer-events: none; }
+  .likert-options span {
+    display: block; text-align: center; padding: .5rem 0;
+    border: 1px solid var(--border); border-radius: 8px; font-weight: 600;
+    font-size: .9rem; color: var(--muted); transition: all .12s;
+  }
+  .likert-options label:hover span { border-color: var(--primary); color: var(--primary); }
+  .likert-options input:checked + span {
+    background: var(--primary); border-color: var(--primary); color: #fff;
+  }
+  .likert-legend {
+    display: flex; justify-content: space-between; font-size: .75rem;
+    color: var(--muted); margin-top: .25rem;
+  }
+  /* ---- Checkboxes ---- */
+  .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem; }
+  .check-item {
+    display: flex; align-items: flex-start; gap: .55rem; padding: .55rem .7rem;
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+    font-size: .9rem; transition: all .12s; background: #fff;
+  }
+  .check-item:hover { border-color: var(--primary); background: #f0fdfa; }
+  .check-item:has(input:checked) { border-color: var(--primary); background: var(--primary-light); }
+  .check-item input { margin-top: .22rem; accent-color: var(--primary); flex-shrink: 0; }
+  /* ---- Botões ---- */
+  .btn {
+    display: inline-flex; align-items: center; gap: .4rem; padding: .65rem 1.3rem;
+    border: none; border-radius: 9px; font-size: .95rem; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: filter .15s, background .15s;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-outline { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+  .btn-danger { background: #fef2f2; color: var(--danger); border: 1.5px solid #fecaca; }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .form-actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1rem; }
+  /* ---- Dashboard ---- */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin-top: 1rem;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.1rem 1.2rem; box-shadow: var(--shadow);
+  }
+  .stat-card .stat-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 700; }
+  .stat-card .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--primary-dark); margin-top: .15rem; line-height: 1.2; }
+  .stat-card .stat-sub { font-size: .82rem; color: var(--muted); }
+  .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .chart-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.2rem; box-shadow: var(--shadow); min-height: 320px;
+  }
+  .chart-box h3 { font-size: .95rem; margin-bottom: .8rem; color: var(--primary-dark); }
+  .toolbar { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+  .toolbar .spacer { flex: 1; }
+  /* ---- Tabela ---- */
+  .tabela-wrapper { overflow-x: auto; margin-top: 1rem; border-radius: var(--radius); border: 1px solid var(--border); background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 850px; }
+  thead { background: #f8fafc; }
+  th { text-align: left; padding: .7rem .8rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: .65rem .8rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tbody tr:hover { background: #f8fafc; }
+  .badge { display: inline-block; padding: .12rem .5rem; border-radius: 999px; font-size: .75rem; font-weight: 700; }
+  .badge-ok { background: #dcfce7; color: #166534; }
+  .badge-mid { background: #fef9c3; color: #854d0e; }
+  .badge-low { background: #fee2e2; color: #991b1b; }
+  .btn-del {
+    background: none; border: none; cursor: pointer; color: var(--muted);
+    font-size: 1rem; padding: .1rem .3rem; border-radius: 4px;
+  }
+  .btn-del:hover { background: #fee2e2; color: var(--danger); }
+  .empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); font-size: .95rem; }
+  /* ---- Toast ---- */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120%);
+    background: var(--primary-dark); color: #fff; padding: .8rem 1.4rem; border-radius: 10px;
+    font-size: .9rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    transition: transform .3s ease; z-index: 999;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  /* ---- Aviso ---- */
+  .aviso {
+    background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+    border-radius: var(--radius); padding: 1rem 1.2rem; font-size: .85rem; margin-top: 1rem;
+  }
+  footer { text-align: center; font-size: .8rem; color: var(--muted); padding: 2rem 1rem; }
+  @media (max-width: 600px) {
+    .likert-options { gap: .3rem; }
+    .likert-options span { font-size: .8rem; padding: .45rem 0; }
+    header h1 { font-size: 1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Manejo de Patologias e Lesões Mais Comuns no Estado do Pará</h1>
+  <p>Instrumento de pesquisa para avaliação do conhecimento dos profissionais de saúde e levantamento das lesões mais frequentes na região.</p>
+  <span class="contador-badge" id="contador-header">0 respostas registradas</span>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-target="form-section">📝 Formulário de Pesquisa</button>
+  <button class="tab-btn" data-target="database-section">📊 Banco de Dados &amp; Análises</button>
+</nav>
+
+<main>
+
+  <!-- ==================== FORMULÁRIO ==================== -->
+  <section id="form-section" class="tab-section active">
+    <div class="card">
+      <form id="research-form" autocomplete="off">
+
+        <fieldset>
+          <legend>1. Identificação do Profissional</legend>
+          <div class="grid">
+            <div class="campo">
+              <label for="nome">Nome ou código de identificação (opcional)</label>
+              <input type="text" id="nome" name="nome" placeholder="Ex.: PROF-001 (recomenda-se anonimizar)">
+            </div>
+            <div class="campo">
+              <label for="profissao">Profissão *</label>
+              <select id="profissao" name="profissao" required>
+                <option value="">Selecione...</option>
+                <option>Médico(a)</option>
+                <option>Enfermeiro(a)</option>
+                <option>Fisioterapeuta</option>
+                <option>Técnico(a) de Enfermagem</option>
+                <option>Agente Comunitário(a) de Saúde</option>
+                <option>Nutricionista</option>
+                <option>Psicólogo(a)</option>
+                <option>Farmacêutico(a)</option>
+                <option>Outro</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="especialidade">Especialidade / Área de atuação</label>
+              <input type="text" id="especialidade" name="especialidade" placeholder="Ex.: Ortopedia, UBS, UTI...">
+            </div>
+            <div class="campo">
+              <label for="tempo">Tempo de atuação (anos)</label>
+              <input type="number" id="tempo" name="tempo" min="0" max="60" placeholder="Ex.: 5">
+            </div>
+            <div class="campo">
+              <label for="municipio">Município de atuação (Pará) *</label>
+              <input type="text" id="municipio" name="municipio" list="lista-municipios" required placeholder="Digite ou selecione...">
+              <datalist id="lista-municipios">
+                <option value="Belém"></option><option value="Ananindeua"></option>
+                <option value="Santarém"></option><option value="Marabá"></option>
+                <option value="Castanhal"></option><option value="Parauapebas"></option>
+                <option value="Abaetetuba"></option><option value="Cametá"></option>
+                <option value="Bragança"></option><option value="Altamira"></option>
+                <option value="Barcarena"></option><option value="Tucuruí"></option>
+                <option value="Redenção"></option><option value="Capanema"></option>
+                <option value="Salinópolis"></option><option value="Breves"></option>
+                <option value="Moju"></option><option value="Tailândia"></option>
+                <option value="Paragominas"></option><option value="Marituba"></option>
+                <option value="São Félix do Xingu"></option><option value="Outro"></option>
+              </datalist>
+            </div>
+            <div class="campo">
+              <label for="instituicao">Tipo de instituição *</label>
+              <select id="instituicao" name="instituicao" required>
+                <option value="">Selecione...</option>
+                <option>SUS / Rede pública</option>
+                <option>Rede privada</option>
+                <option>Filantrópica</option>
+                <option>Ensino / Pesquisa</option>
+                <option>Autônomo(a)</option>
+                <option>Outro</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>2. Conhecimento e Manejo de Patologias</legend>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">
+            Utilize a escala de 1 a 5, sendo <strong>1 = discordo totalmente / muito baixo</strong> e
+            <strong>5 = concordo totalmente / muito alto</strong>.
+          </p>
+
+          <div class="likert">
+            <p class="likert-label">2.1 Como você avalia seu nível de conhecimento sobre o manejo correto das patologias da sua área?</p>
+            <div class="likert-options">
+              <label><input type="radio" name="q1" value="1" required><span>1</span></label>
+              <label><input type="radio" name="q1" value="2"><span>2</span></label>
+              <label><input type="radio" name="q1" value="3"><span>3</span></label>
+              <label><input type="radio" name="q1" value="4"><span>4</span></label>
+              <label><input type="radio" name="q1" value="5"><span>5</span></label>
+            </div>
+            <div class="likert-legend"><span>Muito baixo</span><span>Muito alto</span></div>
+          </div>
+
+          <div class="likert">
+            <p class="likert-label">2.2 Conheço os protocolos/diretrizes de manejo vigentes para as patologias que atendo.</p>
+            <div class="likert-options">
+              <label><input type="radio" name="q2" value="1" required><span>1</span></label>
+              <label><input type="radio" name="q2" value="2"><span>2</span></label>
+              <label><input type="radio" name="q2" value="3"><span>3</span></label>
+              <label><input type="radio" name="q2" value="4"><span>4</span></label>
+              <label><input type="radio" name="q2" value="5"><span>5</span></label>
+            </div>
+            <div class="likert-legend"><span>Discordo totalmente</span><span>Concordo totalmente</span></div>
+          </div>
+
+          <div class="likert">
+            <p class="likert-label">2.3 Recebi capacitação/atualização sobre manejo de patologias nos últimos 12 meses.</p>
+            <div class="likert-options">
+              <label><input type="radio" name="q3" value="1" required><span>1</span></label>
+              <label><input type="radio" name="q3" value="2"><span>2</span></label>
+              <label><input type="radio" name="q3" value="3"><span>3</span></label>
+              <label><input type="radio" name="q3" value="4"><span>4</span></label>
+              <label><input type="radio" name="q3" value="5"><span>5</span></label>
+            </div>
+            <div class="likert-legend"><span>Discordo totalmente</span><span>Concordo totalmente</span></div>
+          </div>
+
+          <div class="likert">
+            <p class="likert-label">2.4 Sinto-me seguro(a) para aplicar as condutas de manejo conforme o que foi ensinado.</p>
+            <div class="likert-options">
+              <label><input type="radio" name="q4" value="1" required><span>1</span></label>
+              <label><input type="radio" name="q4" value="2"><span>2</span></label>
+              <label><input type="radio" name="q4" value="3"><span>3</span></label>
+              <label><input type="radio" name="q4" value="4"><span>4</span></label>
+              <label><input type="radio" name="q4" value="5"><span>5</span></label>
+            </div>
+            <div class="likert-legend"><span>Discordo totalmente</span><span>Concordo totalmente</span></div>
+          </div>
+
+          <div class="likert">
+            <p class="likert-label">2.5 A instituição onde atuo disponibiliza protocolos/materiais atualizados de manejo.</p>
+            <div class="likert-options">
+              <label><input type="radio" name="q5" value="1" required><span>1</span></label>
+              <label><input type="radio" name="q5" value="2"><span>2</span></label>
+              <label><input type="radio" name="q5" value="3"><span>3</span></label>
+              <label><input type="radio" name="q5" value="4"><span>4</span></label>
+              <label><input type="radio" name="q5" value="5"><span>5</span></label>
+            </div>
+            <div class="likert-legend"><span>Discordo totalmente</span><span>Concordo totalmente</span></div>
+          </div>
+
+          <div class="campo" style="margin-top:1rem;">
+            <label>Principais dificuldades encontradas no manejo (marque quantas forem necessárias)</label>
+            <div class="check-grid" id="check-dificuldades"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Lesões Mais Frequentes no Seu Cotidiano (Estado do Pará)</legend>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">
+            Marque os tipos de lesão que você atende com maior frequência na sua prática profissional.
+          </p>
+          <div class="check-grid" id="check-lesoes"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>4. Observações Finais</legend>
+          <div class="campo">
+            <label for="observacoes">Comentários, sugestões ou especificação de "Outro"</label>
+            <textarea id="observacoes" name="observacoes" placeholder="Campo livre (opcional)..."></textarea>
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">✔ Registrar Resposta</button>
+          <button type="reset" class="btn btn-outline">Limpar Formulário</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="aviso">
+      <strong>Nota metodológica:</strong> este formulário é um protótipo funcional. Os dados são
+      armazenados localmente no navegador (localStorage). Para coleta oficial em pesquisa acadêmica,
+      recomenda-se aprovação pelo Comitê de Ética em Pesquisa (CEP), Termo de Consentimento Livre e
+      Esclarecido (TCLE) e uso de servidor/back-end seguro conforme a LGPD.
+    </div>
+  </section>
+
+  <!-- ==================== BANCO DE DADOS ==================== -->
+  <section id="database-section" class="tab-section">
+
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="font-size:1.1rem;color:var(--primary-dark);">Banco de Dados da Pesquisa</h2>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" id="btn-export-csv">⬇ Exportar CSV</button>
+        <button class="btn btn-outline" id="btn-export-json">⬇ Backup JSON</button>
+        <button class="btn btn-outline" id="btn-import-json">⬆ Importar JSON</button>
+        <button class="btn btn-danger" id="btn-clear">🗑 Limpar Dados</button>
+        <input type="file" id="input-import" accept=".json,application/json" hidden>
+      </div>
+
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <div class="charts-grid">
+        <div class="chart-box">
+          <h3>Lesões mais citadas pelos profissionais</h3>
+          <canvas id="chartLesoes" height="300"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>Distribuição do nível de conhecimento (Q2.1)</h3>
+          <canvas id="chartConhecimento" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:1.05rem;color:var(--primary-dark);margin-bottom:.3rem;">Respostas Registradas</h2>
+      <p style="font-size:.82rem;color:var(--muted);">Clique em ✕ para excluir uma resposta individual.</p>
+      <div class="tabela-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th><th>Profissional</th><th>Profissão</th><th>Município</th>
+              <th>Média (1–5)</th><th>Lesões citadas</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-respostas"></tbody>
+        </table>
+      </div>
+      <div id="tabela-vazia" class="empty" hidden>Nenhuma resposta registrada ainda. Preencha o formulário na aba anterior.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Protótipo de instrumento de pesquisa • Dados armazenados localmente (localStorage) • v1.0
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* ==========================================================
+   CONFIGURAÇÃO
+   ========================================================== */
+const STORAGE_KEY = 'pesquisa_lesoes_para_v1';
+
+const LESOES = [
+  'Entorses e luxações',
+  'Estiramentos / lesões musculares',
+  'Fraturas',
+  'Tendinopatias',
+  'LER/DORT (esforço repetitivo)',
+  'Ferimentos cortantes / feridas',
+  'Queimaduras',
+  'Acidentes com animais peçonhentos',
+  'Lesões por acidentes de trânsito (motos)',
+  'Lesões por acidentes de trabalho',
+  'Traumatismo cranioencefálico',
+  'Lesões medulares',
+  'Lesões esportivas',
+  'Outro'
+];
+
+const DIFICULDADES = [
+  'Falta de capacitação/treinamento',
+  'Ausência de protocolos atualizados',
+  'Sobrecarga de trabalho',
+  'Falta de insumos/materiais',
+  'Pouco tempo para atualização',
+  'Dificuldade de acesso a evidências',
+  'Outro'
+];
+
+/* ==========================================================
+   INICIALIZAÇÃO DOS CHECKBOXES DINÂMICOS
+   ========================================================== */
+function criarCheckboxes(containerId, nome, itens) {
+  const container = document.getElementById(containerId);
+  itens.forEach(item => {
+    const label = document.createElement('label');
+    label.className = 'check-item';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.name = nome;
+    input.value = item;
+    const span = document.createElement('span');
+    span.textContent = item;
+    label.appendChild(input);
+    label.appendChild(span);
+    container.appendChild(label);
+  });
+}
+criarCheckboxes('check-lesoes', 'lesoes', LESOES);
+criarCheckboxes('check-dificuldades', 'dificuldades', DIFICULDADES);
+
+/* ==========================================================
+   PERSISTÊNCIA
+   ========================================================== */
+function obterRespostas() {
+  try {
+    const dados = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return Array.isArray(dados) ? dados : [];
+  } catch { return []; }
+}
+function salvarRespostas(lista) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+}
+
+/* ==========================================================
+   UTILITÁRIOS
+   ========================================================== */
+function mediaConhecimento(r) {
+  const vals = Object.values(r.conhecimento).filter(v => v >= 1 && v <= 5);
+  if (!vals.length) return 0;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function classeBadge(media) {
+  if (media >= 4) return 'badge-ok';
+  if (media >= 2.5) return 'badge-mid';
+  return 'badge-low';
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function atualizarContador() {
+  const total = obterRespostas().length;
+  document.getElementById('contador-header').textContent =
+    total + (total === 1 ? ' resposta registrada' : ' respostas registradas');
+}
+
+/* ==========================================================
+   SUBMISSÃO DO FORMULÁRIO
+   ========================================================== */
+document.getElementById('research-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const fd = new FormData(form);
+
+  // Validação extra: pelo menos uma lesão marcada
+  const lesoesMarcadas = fd.getAll('lesoes');
+  if (lesoesMarcadas.length === 0) {
+    toast('⚠ Marque pelo menos uma lesão na seção 3.');
+    return;
+  }
+
+  const resposta = {
+    id: Date.now(),
+    data: new Date().toISOString(),
+    nome: (fd.get('nome') || '').trim() || 'Anônimo',
+    profissao: fd.get('profissao'),
+    especialidade: (fd.get('especialidade') || '').trim() || '—',
+    tempoAtuacao: Number(fd.get('tempo')) || 0,
+    municipio: (fd.get('municipio') || '').trim(),
+    instituicao: fd.get('instituicao'),
+    conhecimento: {
+      q1: Number(fd.get('q1')),
+      q2: Number(fd.get('q2')),
+      q3: Number(fd.get('q3')),
+      q4: Number(fd.get('q4')),
+      q5: Number(fd.get('q5'))
+    },
+    dificuldades: fd.getAll('dificuldades'),
+    lesoes: lesoesMarcadas,
+    observacoes: (fd.get('observacoes') || '').trim()
+  };
+
+  const respostas = obterRespostas();
+  respostas.push(resposta);
+  salvarRespostas(respostas);
+
+  form.reset();
+  atualizarContador();
+  toast('✔ Resposta registrada com sucesso!');
+  renderizarTudo(); // mantém estatísticas prontas caso o usuário vá para a aba 2
+});
+
+/* ==========================================================
+   RENDERIZAÇÃO DO DASHBOARD
+   ========================================================== */
+let graficoLesoes = null;
+let graficoConhecimento = null;
+
+function renderizarEstatisticas(respostas) {
+  const grid = document.getElementById('stats-grid');
+  if (!respostas.length) {
+    grid.innerHTML = '<div class="stat-card"><div class="stat-label">Aguardando dados</div><div class="stat-value">—</div><div class="stat-sub">Nenhuma resposta registrada</div></div>';
+    return;
+  }
+
+  const total = respostas.length;
+  const mediaGeral = respostas.reduce((s, r) => s + mediaConhecimento(r), 0) / total;
+
+  // Lesão mais citada
+  const contLesoes = {};
+  respostas.forEach(r => r.lesoes.forEach(l => contLesoes[l] = (contLesoes[l] || 0) + 1));
+  let lesaoTop = '—', qtdTop = 0;
+  Object.entries(contLesoes).forEach(([l, q]) => { if (q > qtdTop) { lesaoTop = l; qtdTop = q; } });
+
+  // % capacitados (q3 >= 4)
+  const capacitados = respostas.filter(r => r.conhecimento.q3 >= 4).length;
+  const pctCap = Math.round((capacitados / total) * 100);
+
+  grid.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total de respostas</div>
+      <div class="stat-value">${total}</div>
+      <div class="stat-sub">profissionais participantes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Média de conhecimento</div>
+      <div class="stat-value">${mediaGeral.toFixed(1)}<span style="font-size:.9rem;color:var(--muted)"> / 5</span></div>
+      <div class="stat-sub">média das 5 questões</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Lesão mais citada</div>
+      <div class="stat-value" style="font-size:1.05rem;">${lesaoTop}</div>
+      <div class="stat-sub">${qtdTop} citação(ões)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Capacitados (últ. 12 meses)</div>
+      <div class="stat-value">${pctCap}%</div>
+      <div class="stat-sub">${capacitados} de ${total} profissionais</div>
+    </div>
+  `;
+}
+
+function renderizarGraficos(respostas) {
+  // --- Gráfico de lesões ---
+  const cont = {};
+  LESOES.forEach(l => cont[l] = 0);
+  respostas.forEach(r => r.lesoes.forEach(l => { if (cont[l] !== undefined) cont[l]++; }));
+
+  if (graficoLesoes) graficoLesoes.destroy();
+  graficoLesoes = new Chart(document.getElementById('chartLesoes'), {
+    type: 'bar',
+    data: {
+      labels: LESOES,
+      datasets: [{
+        label: 'Citações',
+        data: LESOES.map(l => cont[l]),
+        backgroundColor: '#0d9488',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 } },
+        y: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  // --- Gráfico de distribuição do conhecimento ---
+  const dist = [0, 0, 0, 0, 0];
+  respostas.forEach(r => {
+    const v = r.conhecimento.q1;
+    if (v >= 1 && v <= 5) dist[v - 1]++;
+  });
+
+  if (graficoConhecimento) graficoConhecimento.destroy();
+  graficoConhecimento = new Chart(document.getElementById('chartConhecimento'), {
+    type: 'bar',
+    data: {
+      labels: ['1 - Muito baixo', '2', '3', '4', '5 - Muito alto'],
+      datasets: [{
+        label: 'Respostas',
+        data: dist,
+        backgroundColor: ['#dc2626', '#f97316', '#eab308', '#22c55e', '#0f766e'],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 } }
+      }
+    }
+  });
+}
+
+function renderizarTabela(respostas) {
+  const tbody = document.getElementById('tbody-respostas');
+  const vazia = document.getElementById('tabela-vazia');
+  tbody.innerHTML = '';
+
+  if (!respostas.length) {
+    vazia.hidden = false;
+    return;
+  }
+  vazia.hidden = true;
+
+  // Mais recentes primeiro
+  [...respostas].reverse().forEach(r => {
+    const media = mediaConhecimento(r);
+    const lesoesTexto = r.lesoes.length > 2
+      ? r.lesoes.slice(0, 2).join(', ') + ` +${r.lesoes.length - 2}`
+      : r.lesoes.join(', ') || '—';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${new Date(r.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+      <td>${escapar(r.nome)}</td>
+      <td>${escapar(r.profissao || '—')}</td>
+      <td>${escapar(r.municipio || '—')}</td>
+      <td><span class="badge ${classeBadge(media)}">${media.toFixed(1)}</span></td>
+      <td title="${escapar(r.lesoes.join(', '))}">${escapar(lesoesTexto)}</td>
+      <td><button class="btn-del" data-id="${r.id}" title="Excluir resposta">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', () => excluirResposta(Number(btn.dataset.id)));
+  });
+}
+
+function escapar(str) {
+  const div = document.createElement('div');
+  div.textContent = String(str ?? '');
+  return div.innerHTML;
+}
+
+function renderizarTudo() {
+  const respostas = obterRespostas();
+  renderizarEstatisticas(respostas);
+  renderizarGraficos(respostas);
+  renderizarTabela(respostas);
+  atualizarContador();
+}
+
+/* ==========================================================
+   EXCLUSÃO INDIVIDUAL
+   ========================================================== */
+function excluirResposta(id) {
+  if (!confirm('Deseja realmente excluir esta resposta?')) return;
+  const respostas = obterRespostas().filter(r => r.id !== id);
+  salvarRespostas(respostas);
+  renderizarTudo();
+  toast('Resposta excluída.');
+}
+
+/* ==========================================================
+   EXPORTAÇÃO CSV
+   ========================================================== */
+function campoCSV(valor) {
+  return '"' + String(valor ?? '').replace(/"/g, '""') + '"';
+}
+
+document.getElementById('btn-export-csv').addEventListener('click', () => {
+  const respostas = obterRespostas();
+  if (!respostas.length) { toast('⚠ Nenhum dado para exportar.'); return; }
+
+  const cabecalho = [
+    'ID', 'Data', 'Nome/Código', 'Profissão', 'Especialidade', 'Tempo de atuação (anos)',
+    'Município', 'Instituição', 'Q2.1', 'Q2.2', 'Q2.3', 'Q2.4', 'Q2.5', 'Média',
+    'Dificuldades', 'Lesões citadas', 'Observações'
+  ];
+
+  const linhas = respostas.map(r => [
+    r.id,
+    new Date(r.data).toLocaleString('pt-BR'),
+    r.nome,
+    r.profissao,
+    r.especialidade,
+    r.tempoAtuacao,
+    r.municipio,
+    r.instituicao,
+    r.conhecimento.q1,
+    r.conhecimento.q2,
+    r.conhecimento.q3,
+    r.conhecimento.q4,
+    r.conhecimento.q5,
+    mediaConhecimento(r).toFixed(2),
+    r.dificuldades.join(' | '),
+    r.lesoes.join(' | '),
+    r.observacoes
+  ]);
+
+  const csv = [cabecalho, ...linhas]
+    .map(linha => linha.map(campoCSV).join(';'))
+    .join('\r\n');
+
+  baixarArquivo('\uFEFF' + csv, 'pesquisa_lesoes_para.csv', 'text/csv;charset=utf-8;');
+  toast('✔ CSV exportado (abra no Excel).');
+});
+
+/* ==========================================================
+   BACKUP / IMPORTAÇÃO JSON
+   ========================================================== */
+document.getElementById('btn-export-json').addEventListener('click', () => {
+  const respostas = obterRespostas();
+  if (!respostas.length) { toast('⚠ Nenhum dado para exportar.'); return; }
+  baixarArquivo(
+    JSON.stringify(respostas, null, 2),
+    'backup_pesquisa_lesoes_para.json',
+    'application/json'
+  );
+  toast('✔ Backup JSON gerado.');
+});
+
+document.getElementById('btn-import-json').addEventListener('click', () => {
+  document.getElementById('input-import').click();
+});
+
+document.getElementById('input-import').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const novos = JSON.parse(ev.target.result);
+      if (!Array.isArray(novos)) throw new Error('Formato inválido');
+      const atuais = obterRespostas();
+      const idsExistentes = new Set(atuais.map(r => r.id));
+      const filtrados = novos.filter(r => r && r.id && !idsExistentes.has(r.id));
+      salvarRespostas(atuais.concat(filtrados));
+      renderizarTudo();
+      toast(`✔ ${filtrados.length} resposta(s) importada(s).`);
+    } catch (err) {
+      toast('⚠ Arquivo JSON inválido.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+/* ==========================================================
+   LIMPAR TODOS OS DADOS
+   ========================================================== */
+document.getElementById('btn-clear').addEventListener('click', () => {
+  if (!obterRespostas().length) { toast('Não há dados para limpar.'); return; }
+  if (!confirm('Isso apagará TODAS as respostas registradas. Deseja continuar?')) return;
+  if (!confirm('Confirmação final: essa ação é irreversível. Exporte um backup antes se necessário. Continuar?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  renderizarTudo();
+  toast('Todos os dados foram removidos.');
+});
+
+/* ==========================================================
+   DOWNLOAD
+   ========================================================== */
+function baixarArquivo(conteudo, nome, tipo) {
+  const blob = new Blob([conteudo], { type: tipo });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ==========================================================
+   NAVEGAÇÃO POR ABAS
+   ========================================================== */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.target).classList.add('active');
+    if (btn.dataset.target === 'database-section') renderizarTudo();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+
+/* ==========================================================
+   START
+   ========================================================== */
+atualizarContador();
+renderizarTudo();
+</script>
+</body>
+</html>
